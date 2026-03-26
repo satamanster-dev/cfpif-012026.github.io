@@ -55,7 +55,7 @@
       left: 50px;
       top: 50%;
       transform: translateY(-50%);
-      display: flex;
+      display: none; /* Hidden until game starts */
       flex-direction: column;
       gap: 20px;
       z-index: 20;
@@ -178,7 +178,6 @@
       text-shadow: 0 0 10px #fff, 0 0 20px var(--accent-gold);
     }
 
-    /* OPTIMIZED GOLD CONFETTI */
     .confetti {
       position: fixed;
       width: 10px;
@@ -205,15 +204,22 @@
   <button class="lifeline-btn" id="btn5050" onclick="use5050()">50:50</button>
 </div>
 
-<div id="quizContainer" class="game-box">
+<div id="startScreen" class="game-box">
+  <h2>Bem-vindo ao Desafio</h2>
+  <p>Estás preparado para testar os teus conhecimentos?</p>
+  <br>
+  <button class="btn-action" onclick="initGame()">Começar Jogo</button>
+</div>
+
+<div id="quizContainer" class="game-box display-none">
   <div id="timer-display">30</div>
   <div id="question" class="question-text">A carregar...</div>
   <div id="answers" class="answers"></div>
 </div>
 
 <div id="passwordOverlay" class="game-box display-none">
-  <h2>Nível Bloqueado</h2>
-  <p>Introduza a palavra-passe para a próxima etapa:</p>
+  <h2 id="passTitle">Nível Bloqueado</h2>
+  <p>Introduza a palavra-passe para avançar:</p>
   <input type="password" id="passwordInput" placeholder="Palavra-passe...">
   <br>
   <button class="btn-action" id="passwordButton">Confirmar</button>
@@ -233,7 +239,8 @@
     { q: "Qual é a reção da amígdala perante a realidade virtual?", a: ["Distingue facilmente a realidade da simulação", "Gera respostas emocionais autênticas", "Bloqueia", "Ignora os inputs virtuais."], correct: 1 }
   ];
 
-  const passwords = [null, "foxtrot", "papa", "india", "foxtrot"];
+  // Added "start" as the first password
+  const passwords = ["charlie", "foxtrot", "papa", "india", "foxtrot"];
   const totalQuestions = questions.length;
   
   let current = 0;
@@ -243,6 +250,7 @@
   let hasUsed5050 = false;
   let currentQuestionOptions = [];
 
+  const startScreen = document.getElementById('startScreen');
   const quizContainer = document.getElementById('quizContainer');
   const passwordOverlay = document.getElementById('passwordOverlay');
   const winScreen = document.getElementById('winScreen');
@@ -250,6 +258,17 @@
   const passwordInput = document.getElementById('passwordInput');
   const passwordBtn = document.getElementById('passwordButton');
   const btn5050 = document.getElementById('btn5050');
+  const lifelineContainer = document.getElementById('lifelineContainer');
+
+  function initGame() {
+    startScreen.classList.add('display-none');
+    // Check if the first question has a password
+    if (passwords[current]) {
+      showPassword();
+    } else {
+      loadQuestion();
+    }
+  }
 
   function startTimer() {
     clearInterval(timerInterval);
@@ -269,7 +288,7 @@
     quizContainer.classList.remove('display-none');
     passwordOverlay.classList.add('display-none');
     winScreen.classList.add('display-none');
-    document.getElementById('lifelineContainer').style.display = 'flex';
+    lifelineContainer.style.display = 'flex';
 
     const qData = questions[current];
     document.getElementById('question').innerText = qData.q;
@@ -309,22 +328,35 @@
   function handleNextStep() {
     clearInterval(timerInterval);
     current++;
-    if (current >= totalQuestions) showFinalResult();
-    else if (passwords[current]) showPassword();
-    else loadQuestion();
+    if (current >= totalQuestions) {
+      showFinalResult();
+    } else {
+      if (passwords[current]) {
+        showPassword();
+      } else {
+        loadQuestion();
+      }
+    }
   }
 
   function showPassword() {
     quizContainer.classList.add('display-none');
     passwordOverlay.classList.remove('display-none');
-    document.getElementById('lifelineContainer').style.display = 'none';
+    lifelineContainer.style.display = 'none';
+    
+    // Change title if it's the very first barrier
+    document.getElementById('passTitle').innerText = (current === 0) ? "Acesso Inicial" : "Nível Bloqueado";
+    
     passwordInput.value = '';
     passwordInput.focus();
   }
 
   passwordBtn.addEventListener('click', () => {
-    if (passwordInput.value.trim().toLowerCase() === passwords[current]) loadQuestion();
-    else alert('Palavra-passe incorreta!');
+    if (passwordInput.value.trim().toLowerCase() === passwords[current]) {
+      loadQuestion();
+    } else {
+      alert('Palavra-passe incorreta!');
+    }
   });
 
   passwordInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') passwordBtn.click(); });
@@ -347,7 +379,7 @@
   function showFinalResult() {
     quizContainer.classList.add('display-none');
     passwordOverlay.classList.add('display-none');
-    document.getElementById('lifelineContainer').style.display = 'none';
+    lifelineContainer.style.display = 'none';
     winScreen.classList.remove('display-none');
     
     const display = document.getElementById('winAmount');
@@ -363,8 +395,6 @@
     }
     display.innerHTML = message;
   }
-
-  loadQuestion();
 </script>
 
 </body>
