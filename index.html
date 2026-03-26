@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Flashcards Pedagógicos</title>
+<style>
+    /* General page */
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    h1 {
+        margin-bottom: 40px;
+        color: #1e293b;
+        text-shadow: 1px 1px 2px #aaa;
+        text-align: center;
+    }
+
+    /* Sparkles container */
+    .sparkle {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: gold;
+        pointer-events: none;
+        opacity: 0;
+        animation: sparkle 1s linear forwards;
+    }
+
+    @keyframes sparkle {
+        0% {opacity: 1; transform: translate(0,0) scale(1);}
+        100% {opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0);}
+    }
+
+    /* Card deck */
+    .card-container {
+        perspective: 1200px;
+        margin-bottom: 40px;
+    }
+
+    .card {
+        width: 350px;
+        height: 220px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        cursor: pointer;
+        margin-bottom: 20px;
+    }
+
+    .card.flip {
+        transform: rotateY(180deg) scale(1.05);
+    }
+
+    .card-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+        font-size: 18px;
+        transform-origin: center;
+    }
+
+    .front {
+        background: linear-gradient(135deg, #3b82f6, #1e40af);
+        color: white;
+    }
+
+    .back {
+        background: linear-gradient(135deg, #16a34a, #065f46);
+        color: #f0fdf4;
+        transform: rotateY(180deg);
+    }
+
+    /* Button styling */
+    .controls {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    button {
+        padding: 12px 25px;
+        font-size: 16px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        background: linear-gradient(135deg, #facc15, #f97316);
+        color: white;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    /* Fade & bounce animation for cards */
+    .fade {
+        animation: fadeInBounce 0.5s ease forwards;
+    }
+
+    @keyframes fadeInBounce {
+        0% {opacity: 0; transform: translateY(30px) scale(0.95);}
+        70% {opacity: 1; transform: translateY(-10px) scale(1.05);}
+        100% {opacity: 1; transform: translateY(0) scale(1);}
+    }
+</style>
+</head>
+<body>
+
+<h1>Flashcards Pedagógicos</h1>
+
+<div class="card-container">
+    <div class="card fade" id="card">
+        <div class="card-face front" id="front"></div>
+        <div class="card-face back" id="back"></div>
+    </div>
+</div>
+
+<div class="controls">
+    <button onclick="prevCard()">Anterior</button>
+    <button onclick="nextCard()">Próximo</button>
+</div>
+
+<script>
+const cards = [
+    {
+        question: "Qual é o papel do formador no processo de aprendizagem?",
+        answer: "O formador facilita a construção do conhecimento, promove a participação ativa e adapta estratégias às necessidades do grupo."
+    },
+    {
+        question: "O que significa 'aprendizagem significativa'?",
+        answer: "É quando os novos conteúdos se conectam com experiências prévias do aprendiz, tornando o aprendizado mais relevante e duradouro."
+    },
+    {
+        question: "Como o feedback contribui para a formação?",
+        answer: "O feedback orienta melhorias, reforça acertos e cria um ambiente seguro para experimentação e reflexão."
+    }
+];
+
+// Shuffle cards
+cards.sort(() => Math.random() - 0.5);
+
+let current = 0;
+const card = document.getElementById("card");
+const front = document.getElementById("front");
+const back = document.getElementById("back");
+
+function renderCard() {
+    front.textContent = cards[current].question;
+    back.textContent = cards[current].answer;
+    card.classList.remove("flip");
+    card.classList.add("fade");
+    setTimeout(() => card.classList.remove("fade"), 500);
+}
+
+card.addEventListener("click", () => {
+    card.classList.toggle("flip");
+    createSparkles();
+});
+
+// Navigate cards
+function nextCard() {
+    current = (current + 1) % cards.length;
+    renderCard();
+}
+
+function prevCard() {
+    current = (current - 1 + cards.length) % cards.length;
+    renderCard();
+}
+
+// Sparkle effect
+function createSparkles() {
+    for (let i = 0; i < 15; i++) {
+        const sparkle = document.createElement('div');
+        sparkle.className = 'sparkle';
+        sparkle.style.left = `${card.offsetLeft + card.offsetWidth/2}px`;
+        sparkle.style.top = `${card.offsetTop + card.offsetHeight/2}px`;
+        sparkle.style.setProperty('--dx', `${Math.random()*200-100}px`);
+        sparkle.style.setProperty('--dy', `${Math.random()*200-100}px`);
+        document.body.appendChild(sparkle);
+        setTimeout(() => sparkle.remove(), 1000);
+    }
+}
+
+// Initial render
+renderCard();
+</script>
+
+</body>
+</html>
