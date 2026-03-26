@@ -55,7 +55,7 @@
       left: 50px;
       top: 50%;
       transform: translateY(-50%);
-      display: none; /* Hidden until game starts */
+      display: none; 
       flex-direction: column;
       gap: 20px;
       z-index: 20;
@@ -87,13 +87,13 @@
 
     .game-box {
       width: 850px;
-      padding: 50px 40px;
+      padding: 40px;
       border: 3px solid #fff;
       border-radius: 60px;
       background: var(--glass-bg);
       text-align: center;
       box-shadow: 0 0 40px rgba(0,0,0,0.7);
-      margin-top: 120px;
+      margin-top: 80px;
       position: relative;
       z-index: 5;
     }
@@ -103,25 +103,25 @@
       font-weight: bold;
       color: var(--accent-gold);
       border: 4px solid var(--accent-gold);
-      width: 80px;
-      height: 80px;
-      line-height: 80px;
+      width: 70px;
+      height: 70px;
+      line-height: 70px;
       border-radius: 50%;
-      margin: 0 auto 30px auto;
+      margin: 0 auto 20px auto;
       background: rgba(0,0,0,0.7);
     }
 
     .question-text {
-      font-size: 28px;
-      margin-bottom: 40px;
+      font-size: 26px;
+      margin-bottom: 30px;
       line-height: 1.4;
-      min-height: 80px;
+      min-height: 60px;
     }
 
     .answers {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 15px;
     }
 
     .answers button, .btn-action {
@@ -129,7 +129,7 @@
       border: 2px solid var(--border-blue);
       padding: 15px 25px;
       color: white;
-      font-size: 18px;
+      font-size: 17px;
       text-align: left;
       cursor: pointer;
       border-radius: 40px;
@@ -167,14 +167,34 @@
     }
 
     .result-text {
-      font-size: 36px;
+      font-size: 32px;
       font-weight: bold;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
+
+    .review-container {
+      margin-top: 20px;
+      text-align: left;
+      max-height: 250px;
+      overflow-y: auto;
+      padding: 15px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 20px;
+      border: 1px solid #444;
+    }
+
+    .review-item {
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #333;
+    }
+
+    .review-q { color: #ccc; font-size: 14px; margin: 0 0 5px 0; }
+    .review-a { color: var(--safe-green); font-size: 16px; font-weight: bold; margin: 0; }
 
     .congrats-gold {
       color: var(--accent-gold) !important;
-      font-size: 44px;
+      font-size: 40px;
       text-shadow: 0 0 5px #fff, 0 0 10px var(--accent-gold);
     }
 
@@ -227,6 +247,8 @@
 
 <div id="winScreen" class="game-box display-none">
   <div id="winAmount" class="result-text"></div>
+  <div id="reviewSection" class="review-container display-none"></div>
+  <br>
   <button class="btn-action" onclick="location.reload()">Recomeçar Desafio</button>
 </div>
 
@@ -239,12 +261,12 @@
     { q: "Qual é a reação da amígdala perante a realidade virtual?", a: ["Distingue facilmente a realidade da simulação", "Gera respostas emocionais autênticas", "Bloqueia", "Ignora os inputs virtuais."], correct: 1 }
   ];
 
-  // Added "start" as the first password
   const passwords = ["charlie", "foxtrot", "papa", "india", "foxtrot"];
   const totalQuestions = questions.length;
   
   let current = 0;
   let correctAnswers = 0;
+  let wrongAnswersList = []; // Track missed questions
   let timeLeft = 30;
   let timerInterval;
   let hasUsed5050 = false;
@@ -262,7 +284,6 @@
 
   function initGame() {
     startScreen.classList.add('display-none');
-    // Check if the first question has a password
     if (passwords[current]) {
       showPassword();
     } else {
@@ -280,7 +301,15 @@
       timeLeft--;
       timerDisplay.innerText = timeLeft;
       if (timeLeft <= 10) timerDisplay.style.color = "var(--error-red)";
-      if (timeLeft <= 0) handleNextStep();
+      if (timeLeft <= 0) {
+        // Time's up logic: count as wrong
+        const qData = questions[current];
+        wrongAnswersList.push({
+          q: qData.q,
+          correct: qData.a[qData.correct]
+        });
+        handleNextStep();
+      }
     }, 1000);
   }
 
@@ -294,6 +323,8 @@
     document.getElementById('question').innerText = qData.q;
     
     currentQuestionOptions = qData.a.map((text, index) => ({ text: text, isCorrect: (index === qData.correct) }));
+    
+    // Shuffle options
     for (let i = currentQuestionOptions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [currentQuestionOptions[i], currentQuestionOptions[j]] = [currentQuestionOptions[j], currentQuestionOptions[i]];
@@ -307,7 +338,15 @@
       btn.innerText = `${["A", "B", "C", "D"][i]}: ${opt.text}`;
       btn.id = `opt-${i}`;
       btn.onclick = () => {
-        if (opt.isCorrect) correctAnswers++;
+        if (opt.isCorrect) {
+          correctAnswers++;
+        } else {
+          // Store wrong answer data
+          wrongAnswersList.push({
+            q: qData.q,
+            correct: qData.a[qData.correct]
+          });
+        }
         handleNextStep();
       };
       answersDiv.appendChild(btn);
@@ -343,10 +382,7 @@
     quizContainer.classList.add('display-none');
     passwordOverlay.classList.remove('display-none');
     lifelineContainer.style.display = 'none';
-    
-    // Change title if it's the very first barrier
     document.getElementById('passTitle').innerText = (current === 0) ? "Acesso Inicial" : "Nível Bloqueado";
-    
     passwordInput.value = '';
     passwordInput.focus();
   }
@@ -383,7 +419,11 @@
     winScreen.classList.remove('display-none');
     
     const display = document.getElementById('winAmount');
-    let message = `Acertaste ${correctAnswers} perguntas em ${totalQuestions}`;
+    const reviewSection = document.getElementById('reviewSection');
+    
+    let message = `Acertaste ${correctAnswers} perguntas de ${totalQuestions}`;
+    
+    // Performance styling
     if (correctAnswers === 0) display.style.color = "var(--error-red)";
     else if (correctAnswers <= 2) display.style.color = "var(--warn-orange)";
     else if (correctAnswers === 3) display.style.color = "var(--warn-yellow)";
@@ -394,6 +434,21 @@
       createConfetti();
     }
     display.innerHTML = message;
+
+    // Show mistakes if any
+    if (wrongAnswersList.length > 0) {
+      reviewSection.classList.remove('display-none');
+      let reviewHTML = '<p style="color:var(--accent-gold); margin-top:0;">Revisão de Erros:</p>';
+      wrongAnswersList.forEach(item => {
+        reviewHTML += `
+          <div class="review-item">
+            <p class="review-q"><strong>Pergunta:</strong> ${item.q}</p>
+            <p class="review-a"><strong>Correção:</strong> ${item.correct}</p>
+          </div>
+        `;
+      });
+      reviewSection.innerHTML = reviewHTML;
+    }
   }
 </script>
 
